@@ -1,3 +1,4 @@
+import os
 from concurrent.futures import thread
 import requests
 import threading
@@ -8,7 +9,7 @@ dataset_url = f"https://d17h27t6h515a5.cloudfront.net/topher/2017/February/5898c
 
 path_prefix = "./data/"
 
-
+os.mkdir(path_prefix)
 
 def download_data(url):
     local_filename =  path_prefix +  url.split('/')[-1]
