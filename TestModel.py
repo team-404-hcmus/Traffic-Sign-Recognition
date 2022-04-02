@@ -54,11 +54,11 @@ def preprocessing(img):
     return img
 
 new_model = tensorflow.keras.models.load_model('my_model.h5')
-# Show the model architecture
+new_model.load_weights("VGG_GermanSigns_classification.h5")
 #new_model.summary()
 
 #read and pre process
-img_original = cv2.imread("3.jpg")
+img_original = cv2.imread("5.png")
 img = np.asarray(img_original)
 img = cv2.resize(img, (32, 32))
 img=preprocessing(img)
@@ -67,14 +67,13 @@ img = img.reshape(1, 32, 32, 1)
 prediction =new_model.predict(img)
 prediction_class=np.argmax(prediction)
 probabilityValue=np.amax(prediction)
+print(prediction_class)
 print(probabilityValue)
 
 #show result
-frameWidth= 800         # CAMERA RESOLUTION
-frameHeight = 600
-brightness = 150
-threshold = 0.75         # PROBABLITY THRESHOLD
+threshold = 0.75
 font = cv2.FONT_HERSHEY_SIMPLEX
+img_original=cv2.resize(img_original,(800,800))
 cv2.putText(img_original, "CLASS: " , (20, 35), font, 0.75, (0, 0, 255), 2, cv2.LINE_AA)
 cv2.putText(img_original, "PROBABILITY: ", (20, 75), font, 0.75, (0, 0, 255), 2, cv2.LINE_AA)
 
