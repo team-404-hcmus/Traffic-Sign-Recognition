@@ -3,6 +3,11 @@ import tensorflow
 import numpy as np
 import cv2
 from tensorflow import keras
+from localize_Object import DetectByContour
+THRESHOLD=0.5
+font = cv2.FONT_HERSHEY_SIMPLEX
+font_scale=0.5
+sigma=20
 def getCalssName(classNo):
     if   classNo == 0: return 'Speed Limit 20 km/h'
     elif classNo == 1: return 'Speed Limit 30 km/h'
@@ -65,28 +70,43 @@ new_model.load_weights("VGG_GermanSigns_classification.h5")
 
 #read and pre process
 path="F:/GitHub Projects/Traffic-Sign-Recognition/TestData/"
-img_original = cv2.imread(path+"5.png")
-img = np.asarray(img_original)
-img = cv2.resize(img, (32, 32))
-img = preprocessing(img)
-img = img.reshape(1, 32, 32, 1)
-#predict class
-prediction =new_model.predict(img)
-prediction_class=np.argmax(prediction)
-probabilityValue=np.amax(prediction)
-print(prediction)
-print(prediction_class)
-print(probabilityValue)
+img_original = cv2.imread(path+"1.jpg")
+#draw image là ảnh dùng đê vẽ lên, để cho ảnh gốc resize r không ảnh hưởng đến việc phân lớp
 
+
+#detect biên cạnh để detect Contour
+imgGray = cv2.cvtColor(img_original, cv2.COLOR_BGR2GRAY)
+imgBlur = cv2.GaussianBlur(imgGray, (7, 7), 1)
+imgCanny = cv2.Canny(imgBlur, 50, 50)
+#Array vị trí các object được đánh label
+x_start,y_start,x_end,y_end=DetectByContour(imgCanny)
+for i in range(len(x_start)):
+    x1,y1,x2,y2=x_start[i],y_start[i],x_end[i],y_end[i]
+    #cộng trừ sigma để lấy được ảnh toàn phần của biển báo
+    crop_img = img_original[y1-sigma:y2+sigma, x1-sigma:x2+sigma]
+    #crop_img=cv2.resize(crop_img,(500,500))
+    img = np.asarray(crop_img)
+    img = cv2.resize(img, (32, 32))
+    img = preprocessing(img)
+    img = img.reshape(1, 32, 32, 1)
+    #predict class
+    prediction =new_model.predict(img)
+    prediction_class=np.argmax(prediction)
+    probabilityValue=np.amax(prediction)
+    print(prediction)
+    print(prediction_class)
+    print(probabilityValue)
+    if(probabilityValue>THRESHOLD):
+        cv2.rectangle(img_original, (x1, y1), (x2,y2 ), (0, 255, 0), 2)
+        cv2.putText(img_original, "CLASS: ", (x2+10, y1), font,
+                    font_scale, (0, 0, 255), 2, cv2.LINE_AA)
+        cv2.putText(img_original, "PROBABILITY: ", (x2+10, y1+50), font,
+                    font_scale, (0, 0, 255), 2, cv2.LINE_AA)
+        cv2.putText(img_original, str(prediction_class) + " " + str(getCalssName(prediction_class)), (x2+50, y1), font,
+                    font_scale, (0, 0, 255), 2, cv2.LINE_AA)
+        cv2.putText(img_original, str(round(probabilityValue * 100, 2)) + "%", (x2+120, y1+50), font,
+                    font_scale, (0, 0, 255), 2,cv2.LINE_AA)
 #show result
-threshold = 0.75
-font = cv2.FONT_HERSHEY_SIMPLEX
-img_original=cv2.resize(img_original,(800,800))
-cv2.putText(img_original, "CLASS: " , (20, 35), font, 0.75, (0, 0, 255), 2, cv2.LINE_AA)
-cv2.putText(img_original, "PROBABILITY: ", (20, 75), font, 0.75, (0, 0, 255), 2, cv2.LINE_AA)
 
-cv2.putText(img_original,str(prediction_class)+" "+str(getCalssName(prediction_class)), (120, 35), font, 0.75, (0, 0, 255), 2, cv2.LINE_AA)
-cv2.putText(img_original, str(round(probabilityValue*100,2) )+"%", (180, 75), font, 0.75, (0, 0, 255), 2, cv2.LINE_AA)
 cv2.imshow("Result", img_original)
-
 cv2.waitKey(0)
