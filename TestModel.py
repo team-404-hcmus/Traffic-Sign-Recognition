@@ -48,25 +48,33 @@ def getCalssName(classNo):
     elif classNo == 41: return 'End of no passing'
     elif classNo == 42: return 'End of no passing by vechiles over 3.5 metric tons'
 def preprocessing(img):
-    img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-    img = cv2.equalizeHist(img)
-    img = img / 255
-    return img
+    #grayscale
+    gray_image = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    #equalize histogram
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2, 2))
+    hist_equal_image=clahe.apply(gray_image)
+    #normalize
+    normalized_image = np.array(hist_equal_image, dtype=np.float32) / 255
+    #img = img / 255
+    return normalized_image
 
+#load model
 new_model = tensorflow.keras.models.load_model('my_model.h5')
 new_model.load_weights("VGG_GermanSigns_classification.h5")
 #new_model.summary()
 
 #read and pre process
-img_original = cv2.imread("5.png")
+path="F:/GitHub Projects/Traffic-Sign-Recognition/TestData/"
+img_original = cv2.imread(path+"5.png")
 img = np.asarray(img_original)
 img = cv2.resize(img, (32, 32))
-img=preprocessing(img)
+img = preprocessing(img)
 img = img.reshape(1, 32, 32, 1)
 #predict class
 prediction =new_model.predict(img)
 prediction_class=np.argmax(prediction)
 probabilityValue=np.amax(prediction)
+print(prediction)
 print(prediction_class)
 print(probabilityValue)
 
@@ -80,6 +88,5 @@ cv2.putText(img_original, "PROBABILITY: ", (20, 75), font, 0.75, (0, 0, 255), 2,
 cv2.putText(img_original,str(prediction_class)+" "+str(getCalssName(prediction_class)), (120, 35), font, 0.75, (0, 0, 255), 2, cv2.LINE_AA)
 cv2.putText(img_original, str(round(probabilityValue*100,2) )+"%", (180, 75), font, 0.75, (0, 0, 255), 2, cv2.LINE_AA)
 cv2.imshow("Result", img_original)
-
 
 cv2.waitKey(0)
