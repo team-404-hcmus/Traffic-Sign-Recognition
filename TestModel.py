@@ -4,10 +4,10 @@ import numpy as np
 import cv2
 from tensorflow import keras
 from localize_Object import DetectByContour
-THRESHOLD=0.5
+THRESHOLD=0.7
 font = cv2.FONT_HERSHEY_SIMPLEX
-font_scale=0.5
-sigma=20
+font_scale=0.4
+sigma=10
 def getCalssName(classNo):
     if   classNo == 0: return 'Speed Limit 20 km/h'
     elif classNo == 1: return 'Speed Limit 30 km/h'
@@ -52,7 +52,10 @@ def getCalssName(classNo):
     elif classNo == 40: return 'Roundabout mandatory'
     elif classNo == 41: return 'End of no passing'
     elif classNo == 42: return 'End of no passing by vechiles over 3.5 metric tons'
+
 def preprocessing(img):
+    img = np.asarray(crop_img)
+    img = cv2.resize(img, (32, 32))
     #grayscale
     gray_image = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     #equalize histogram
@@ -61,7 +64,9 @@ def preprocessing(img):
     #normalize
     normalized_image = np.array(hist_equal_image, dtype=np.float32) / 255
     #img = img / 255
-    return normalized_image
+    #reshape
+    reshape_img = normalized_image.reshape(1, 32, 32, 1)
+    return reshape_img
 
 #load model
 new_model = tensorflow.keras.models.load_model('my_model.h5')
@@ -70,25 +75,25 @@ new_model.load_weights("VGG_GermanSigns_classification.h5")
 
 #read and pre process
 path="F:/GitHub Projects/Traffic-Sign-Recognition/TestData/"
-img_original = cv2.imread(path+"1.jpg")
-#draw image là ảnh dùng đê vẽ lên, để cho ảnh gốc resize r không ảnh hưởng đến việc phân lớp
+img_original = cv2.imread(path+"4.jpg")
+img_original = cv2.resize(img_original,(800,800))
 
-
+gray_original = cv2.cvtColor(img_original,cv2.COLOR_BGR2GRAY)
+euqalHist_original = cv2.equalizeHist(gray_original)
+height, width, _ = img_original.shape
 #detect biên cạnh để detect Contour
-imgGray = cv2.cvtColor(img_original, cv2.COLOR_BGR2GRAY)
-imgBlur = cv2.GaussianBlur(imgGray, (7, 7), 1)
+imgBlur = cv2.GaussianBlur(euqalHist_original, (7, 7), 1)
 imgCanny = cv2.Canny(imgBlur, 50, 50)
 #Array vị trí các object được đánh label
 x_start,y_start,x_end,y_end=DetectByContour(imgCanny)
+
 for i in range(len(x_start)):
     x1,y1,x2,y2=x_start[i],y_start[i],x_end[i],y_end[i]
     #cộng trừ sigma để lấy được ảnh toàn phần của biển báo
-    crop_img = img_original[y1-sigma:y2+sigma, x1-sigma:x2+sigma]
-    #crop_img=cv2.resize(crop_img,(500,500))
-    img = np.asarray(crop_img)
-    img = cv2.resize(img, (32, 32))
-    img = preprocessing(img)
-    img = img.reshape(1, 32, 32, 1)
+    crop_img = img_original[y1:y2, x1:x2]
+    # cv2.imshow("crop", crop_img)
+    # cv2.waitKey(0)
+    img = preprocessing(crop_img)
     #predict class
     prediction =new_model.predict(img)
     prediction_class=np.argmax(prediction)
