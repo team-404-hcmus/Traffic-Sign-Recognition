@@ -75,7 +75,7 @@ new_model.load_weights("VGG_GermanSigns_classification.h5")
 
 #read and pre process
 path="F:/GitHub Projects/Traffic-Sign-Recognition/TestData/"
-img_original = cv2.imread(path+"4.jpg")
+img_original = cv2.imread(path+"8.jpg")
 img_original = cv2.resize(img_original,(800,800))
 
 gray_original = cv2.cvtColor(img_original,cv2.COLOR_BGR2GRAY)
@@ -114,4 +114,5 @@ for i in range(len(x_start)):
 #show result
 
 cv2.imshow("Result", img_original)
+cv2.imwrite("C:/Users/admin/Desktop/result.jpg",img_original)
 cv2.waitKey(0)
